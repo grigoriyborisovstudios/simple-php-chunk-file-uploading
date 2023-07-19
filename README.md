@@ -8,7 +8,7 @@ Simple PHP uploading system, that splits the file into parts of a given variable
 
 ## Usage/Examples
 
-Used to bypass post_max_size and upload_max_filesize set in the php.ini by server administrators.
+Used to bypass upload_max_filesize set in the php config file by server administrators.
 
 
 ## Authors
