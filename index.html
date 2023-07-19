@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chunked File Upload Example by Grigoriy Borisov Studios</title>
+    <!-- Include the jQuery library -->
+    <!-- Підключення бібліотеки jQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <!-- File selection field -->
+    <!-- Поле вибору файлу -->
+    <input id="file-upload" type="file" name="file" />
+
+
+    <!-- Upload button -->
+    <!-- Кнопка завантаження -->
+    <button id="upload-button">Upload</button>
+
+    <!-- Upload status -->
+<!-- Статус завантаження -->
+<div id="upload-status"></div>
+
+<!-- Upload status in Ukrainian -->
+<!-- Статус завантаження українською -->
+<div id="upload-status-ua"></div>
+
+<script>
+    $(document).ready(function () {
+        // Chunk size in bytes
+        // Розмір фрагменту у байтах
+        const BYTES_PER_CHUNK = 1 * 1024 * 1024; // 1MB chunk sizes.
+
+        // Get the file input and upload button elements
+        // Отримати елементи вводу файлу та кнопки завантаження
+        var fileInput = document.getElementById('file-upload');
+        var uploadButton = document.getElementById('upload-button');
+
+        // Total chunks
+        // Всього фрагментів
+        var totalChunks;
+
+        // Current chunk number
+        // Поточний номер фрагменту
+        var currentChunk = 0;
+
+        // Add an event handler to the upload button
+        // Додати обробник подій до кнопки завантаження
+        uploadButton.onclick = function () {
+            var file = fileInput.files[0];
+            totalChunks = Math.ceil(file.size / BYTES_PER_CHUNK);
+            var start = 0;
+            var end = BYTES_PER_CHUNK;
+            // Loop through all file chunks
+            // Цикл по всіх фрагментах файлу
+            while (start < file.size) {
+                // Pass the original file name along with the chunk
+                // Передати оригінальне ім'я файлу разом з фрагментом
+                uploadChunk(file.slice(start, end), file.name);
+                start = end;
+                end = start + BYTES_PER_CHUNK;
+            }
+        };
+
+        // Function to upload a chunk
+        // Функція для завантаження фрагменту
+        function uploadChunk(chunk, fileName) {
+            var formData = new FormData();
+            formData.append('file', chunk);
+            // Include the original file name
+            // Включитіть оригінальне ім'я файлу
+            formData.append('filename', fileName);
+
+            // Make an AJAX request to the server
+            // Зробити AJAX запит до сервера
+            $.ajax({
+                url: 'upload.php',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                // Before the request is sent
+                // Перед відправкою запиту
+                beforeSend: function () {
+                    $('#upload-status').text('Uploading... ' + Math.round((currentChunk / totalChunks) * 100) + '%');
+                    $('#upload-status-ua').text('Завантаження... ' + Math.round((currentChunk / totalChunks) * 100) + '%');
+                },
+                // Successful response handler
+                // Обробник успішного відгуку
+                success: function (data) {
+                    // Parse the JSON response
+                    // Розбір відповіді JSON
+                    var response = JSON.parse(data);
+                    if (response.status) {
+                        currentChunk++;
+                        if (currentChunk === totalChunks) {
+                            $('#upload-status').text('Upload complete: ' + response.message);
+                            $('#upload-status-ua').text('Завантаження завершено: ' + response.messageua);
+                        }
+                    } else {
+                        $('#upload-status').text('Upload failed: ' + response.message);
+                        $('#upload-status-ua').text('Завантаження не вдалося: ' + response.message);
+                    }
+                },
+                // Completion handler
+                // Обробник завершення
+                complete: function () {
+                    console.log('XHR request complete');
+                },
+                // Failed response handler
+                // Обробник невдалого відгуку
+                error: function () {
+                    $('#upload-status').text('Upload failed');
+                    $('#upload-status-ua').text('Завантаження не вдалося');
+                }
+            });
+        }
+    });
+</script>
+</body>
+</html>
